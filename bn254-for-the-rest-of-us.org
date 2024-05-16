@@ -1,0 +1,11 @@
+#+TITLE: BN254 For The Rest Of Us
+
+Reference: [[https://hackmd.io/@jpw/bn254][BN254 For The Rest Of Us]]
+
+- The pairing-friendly elliptic curve BN254 was previously used by ZCash and is currently the only curve with precompiled contracts on Ethereum for elliptic curve addition, scalar multiplication, and pairings.
+- Due to these precompiles, BN254 is the most practical choice of a pairing-friendly curve to use for verifying on-chain zk-SNARKs using proof schemes such as Groth16 and PlonK.
+- Despite the number of bits of security of BN254 dropping from 128 to around 100 after the new Kim-Barbulescu algorithms, it is still the most practical choice for zk verification using zk proofing schemes.
+- 254 stands for the number of bits in the prime associated to the base field.
+
+- A BN254 curve is defined by:
+  $y^2 = x^3 + 3

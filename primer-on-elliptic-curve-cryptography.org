@@ -1,0 +1,72 @@
+#+TITLE: Primer on Elliptic Curve Cryptography
+
+Reference: [[https://blog.cloudflare.com/a-relatively-easy-to-understand-primer-on-elliptic-curve-cryptography][Primer on Elliptic Curve Cryptography]]
+
+** Why Elliptic Curve for cryptography?
+
+- Back in 1977, the RSA algorithm and the Diffie-Hellman key exchange algorithm were introduced.
+- They were revolutionary because the first viable cryptographic schemes where security was based on the theory of numbers.
+- Modern cryptography is founded on the idea that the key that you use to encrypt your data can be made public while the \\
+key that is used to decrypt your data can be kept private.
+    - Such systems are known as public-key cryptographic systems.
+    - Examples: RSA Algorithm
+- You need a set of algorithms that is easy to process in one direction but difficult to undo for a public-key \\
+cryptographic system to work.
+
+**** How does RSA work?
+
+- The algorithm multiplied two prime numbers.
+- The multiplicaton is the easy algorithm, its difficult pair algorithm is factoring the product of the \\
+multiplication into its two component primes.
+- Algorithms that have this characteristic (easy in one direction, hard in the other) are known as *Trapdoor functions*.
+- Simplistically: the bigger the spread b/w the difficulty of going in one direction in a Trapdoor function and \\
+  going the other, the more secure a cryptographic system based on it will be.
+
+#+BEGIN_QUOTE
+Refer to the link on an example of the RSA operation.
+#+END_QUOTE
+
+** RSA & Diffie-Hellman - Not a perfect trapdoor
+
+- The authors proved that breaking the system is equivalent to solving a mathematical problem that is thought to be difficult to solve.
+- Factoring is a very well-known problem and has been studied since antiquity. (Refer to Sieve of Eratosthenes)
+- Specialized algorithms like the Quadratic Sieve and the General Number Field Sieve were created to tackle the problem of prime factorization.
+- These algorithms are fasters and less computationally intensive than the naive approach of just guessing pairs of known primes.
+- As the resources available to decrypt numbers increase, the size of the keys need to grow even faster to counter this.
+- This is not a sustainable approach since mobile and other low-powered devices that have limited computational power cannot scale accordingly.
+- This means RSA is not the ideal system for the future of cryptigraphy.
+- In the pursuit of finding an ideal trapdoor function, researchers found Elliptic curves to be a good successor.
+
+** Elliptic Curves
+
+- An elliptic curve is a set of points that satisfy a specific mathematical equation.
+- The equation for a typical elliptic curve looks something like this:
+  -  $y^2 = x^3 + ax + b
+- An elliptic curve exhibits some strange symmetry.
+- Refer to the link for an analogical example.
+
+- The simplified curve in the picture doesn't represet what the curves used for cryptography look like.
+- For this, we have to restrict ourselves to numbers in a fixed range, like in RSA.
+- We restrict ourselved to whole numbers in a fixed range.
+- When computing the formula for the elliptic curve, we use the trick of rolling over numbers when we hit the maximum.
+- If we pick the maximum to be a prime number, the elliptic curve is called a prime curve and has excellent cryptographic properties.
+
+- An elliptic curve cryptosystem can be defined by picking a prime number as a maximum, a curve equation and a public point on the curve.
+- A private key is a number /priv/ and a public key is public point dotted with itself /priv/ times.
+- Computing the private key from the public key in this kind of cryptosystem is called the elliptic curve discrete logarithm function.
+- This seems to to be the closest to ideal trapdoor function.
+
+** What does it all mean?
+
+- The elliptic curve discrete logarithm is the hard problem underpinning elliptic curve cryptography.
+- Solving elliptic curve discrete logarithms is significantly harder than factoring.
+- Since a more computationally intensive hard problem means a stronger cryptographic system, it succeeds RSA and Diffie-Hellman.
+- With ECC, you can use smaler keys to get the same levels of security. Small keys are important since cryptography is now performed on smaller, low-power devices.
+- While you could likely continue to keep RSA secure by increasing the key length that comes with the cost of slower cryptographic performance on the client, ECC appears to offer a better tradeoff: high security with short, fast keys.
+
+** Downside of ECC
+
+- Dual Elliptic Curve Deterministic Random Bit Generator - generates random-looking numbers using the mathemetics of elliptic curves.
+- The algorithm itself involves taking points on a curve and repeatedly performing an elliptic curve "dot" operation.
+- General distrust in NIST and NSA makes ECC adoption skeptical.
+- Patent infringment issues with BlackBerry owning over 130 patents to cover specific uses of elliptic curves.

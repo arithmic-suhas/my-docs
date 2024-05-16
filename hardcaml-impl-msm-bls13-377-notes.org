@@ -1,0 +1,27 @@
+#+TITLE: Hardcaml implementation of MSM for the BLS12-377 - Notes
+
+Reference: [[https://zprize.hardcaml.com/msm-overview][Hardcaml MSM implementation for zprize]]
+
+- Tasked to building an FPGA design to multiply 2^26 points on the BLS12-377 elliptic curve by scalars from the associated 253 bit scalar field and add them all as fast as possible.
+  - Multiply and accumulate operation of sorts. Probably highly parallelized with multiple compute elements and utilizing high-bandwidth memory (HBM) I presume.
+- The challenge with computation of point addition and point multiplication is that both are very expensive operations in terms of compute and memory utilization.
+  - I believe this is the drawback of performing these operations on general, non-domain-optimized or non-domain-specific compute.
+- Their target platform was an Amazon f1.2xlarge instance which uses a *Xilinx UltraScale+ VU9P FPGA* with DDR memory banks (DDR4). This FPGA has PCIe lanes integrated as well as high-performance DSP cores.
+- They mention that they have utilized the *aws-fpga Vitis flow* for implementation.
+  - Will explore if HLS might be a viable route to implement for BN254.
+
+** Top-level Pippenger Design
+
+- The main idea of Pippenger's Algorithm is to reformulate the dot products into smaller dot products over windows, where each window represents a small contiguous set of bits from the scalar.
+
+** Overview of the Architecture
+
+- In the case of BLS12-377, the prime field and scalar field are 377 and 253 bit respectively.
+- In their implementation, they have partitioned the work that the FPGA performs the bucket aggregation and the host performs the final bucket sum.
+  - Will check if this partitioning is required. If the FPGA can perform the final bucket sum, we _might_ save some cycles in host-FPGA context switch.
+- They claim the reason to partition it in this way is because when processing multiple MSMs, this partitioning allows them to mask out the latency of bucket sum by starting the bucket aggregation on the next MSM while computing bucket sum for the current MSM at host.
+  - It makes sense to do so, I wonder if we can utilized some more LUTs on the FPGA for the final bucket sum and allow a pipelined buffer to manage the latency and see if that is viable.
+- They have chosen B = 13 and W = 20 in their implementation, as this setup uses about 60% of the memory resources available.
+- The time taken for bucket sum is around 1/10th the time taken for bucket aggregation.
+  - Bucket sum isn't a very intensive operation from the looks of it, hence the host performing it makes sense. Still curious if there is anything to accelerate.
+- They have discuss some ideas on improving the performance further in the future work section. (TODO tag future work section)
