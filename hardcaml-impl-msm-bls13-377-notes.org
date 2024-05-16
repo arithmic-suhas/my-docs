@@ -25,3 +25,33 @@ Reference: [[https://zprize.hardcaml.com/msm-overview][Hardcaml MSM implementati
 - The time taken for bucket sum is around 1/10th the time taken for bucket aggregation.
   - Bucket sum isn't a very intensive operation from the looks of it, hence the host performing it makes sense. Still curious if there is anything to accelerate.
 - They have discuss some ideas on improving the performance further in the future work section. (TODO tag future work section)
+
+** FPGA Dataflow
+
+- The high level block diagram showing the dataflow used in Hardcaml's MSM implementation -> [[https://zprize.hardcaml.com/images/msm-block-diagram.png][FPGA Dataflow block diagram]]
+- Points are transformed into a custom representation and pre-loaded into DDR4 memory -> pre-processing data to create a custom structure to store, access and move the data when required to.
+- They say this is done so that, at run-time only scalars are sent from the host to the FPGA via PCIe.
+- A single fully-pipelined point added on the FPGA which adds points to buckets as directed by a Pippenger Controller until there is no more points left (in memory or the FIFO buffers (if any)).
+  - Pippenger Controller must be using some sort of straight-forward arbitration to ensure all the points are fed to the adder, I will check if the controller arbitration might be a bottleneck. Or if we can improve the controller to see any considerable improvements.
+  - Another thing I would like to check if we can unroll the adder in anyway possible to pipeline larger operations into micro operations and reduce latency that way.
+- Once all points have been added into buckets, the FPGA streams back the result for the host to do the final bucket sum.
+- They say this approach allows them to focus on implementing a very high performance added on the FPGA (seems like these addition operations are the dominating operation in the Pippenger's algorithm) and then leaving smaller tasks for the host to perform.
+  - I will look for their benchmark results and see if they have done any sort of profiling.
+
+** FPGA Bucket Sum
+
+- In their implementation, the majority of the computation is performed by a *fully pipelined point added* with a high but static latency of above 200 cycles.
+- They say, that if a coefficient needs to be naively added to a bucket that is currently in use by the point adder, they need to wait to do so until the addition operation is fully complete before trying again.
+  - Seems like a FIFO of depth 2 or 3 can be added to the adder to facilitate issuing coefficients that need to be added to a bucket in between.
+- They have discussed more about minimizing the impact of the ~200 cycle latency per operation in the page about the Pippenger Controller. (TODO tag the Pippenger Controller page)
+- They seem to be utilizing a trick to reduce the memory usage *by transforming the scalar into signed digit representation for scalars for every bucket*.
+
+** FPGA Point Adder
+
+- The most expensive part of the pipelined point adder computation is *field multiplications*.
+  - Will do literature survey to see if there are any novel methods to mitigate this compute expense with field addition and field multiplications.
+- Their implementation is based on Barrett Reduction.
+  - I will read more about reduction methods and see if trying a different reduction method can fetch us performance gains.
+- To reduce the number of field multiplications, *they convert the points representation* from its original Weistrass curve form into a *Twisted Edwards curve* representation. This reduces the amount of field multiplication substantially.
+  - I will look into more about these curve representations.
+- They have gone one step further to reduce the field multiplication operations with some precomputation tricks in the adder implementation. (TODO tag the precomputation tricks page)
