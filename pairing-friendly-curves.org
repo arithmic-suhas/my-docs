@@ -1,0 +1,39 @@
+#+TITLE: Pairing-Friendly Curves
+
+Reference: [[https://www.ietf.org/archive/id/draft-irtf-cfrg-pairing-friendly-curves-08.html][Pairing-Friendly Curves]]
+
+- Pairings are special maps defined using elliptic curves and it can be applied to construct several cryptographic protocols such as identity-based encryption, attribute-based encryption and so on.
+  - Examples for pairings: Weil pairing, Tate pairing, optimal Ate pairing.
+- Kim and Barbulescu proposed an efficient number field sieve algorithm named exTNFS for the discrete logarithm problem in a finite field.
+- Several types of pairing-friendly curves such as Barreto-Naehrig curves are affected by the attack.
+- In particular, a Barreto-Naehrig curve with a 254-bit characteristic was adopted by a lof os cryptographic libraries as a parameter of 128-bit security, however, it ensures no more than the 100-but security level due to the exTNFS attack.
+
+** Pairing-based Cryptography
+
+- Elliptic curve cryptography has become a crucial area in currently deployed cryptosystems.
+- Algorithms like Elliptic Curve Digital Signature Algorithm (ECDSA) are widely used.
+- Pairing-based cryptography is a subfield of elliptic curve cryptography.
+
+#+BEGIN_QUOTE
+Zcash implemented their own zero-knowledge proof algorithm named Zero-Knowledge Succinct Non-Interactive Argument of Knowledge(zk-SNARKs). zk-SNARKs are used for protecting the privacy of transactions of Zcash. They use pairings to construct zk-SNARKs.
+#+END_QUOTE
+
+*** Barreto-Naehrig Curves
+
+- A BN curve is a family of pairing-friendly curves.
+- A pairing over BN curves constructs optimal Ate pairings.
+- A BN curve is defined by elliptic curves E and E' parameterized by a well-chosen integer t. E is defined over GF(p), where p is a prime number and at least 5, and E(GF(p)) has a subgroup of prime order r. THe characteristic p and the order r are parameterized by :
+
+#+BEGIN_QUOTE
+p = 36 * t^4 + 36 * t^3 + 24 * t^2 + 6 * t + 1
+r = 36 * t^4 + 36 * t^3 + 18 * t^2 + 6 * t + 1
+#+END_QUOTE
+
+- for an integer t.
+
+- In the case of BN curves, we can use twists of the degree 6.
+- If m is an element that is neither a square nor a cube in an extension field GF(p^2), the twist E' of E is defined over an extension field GF(p^2) by the equation E' = y^2 = x^3 + b' with b' = b/m or b' = b * m.
+- BN curves are called D-type if b' = b/m and M-type if b' = b * m.
+- The embedding degree k is 12.
+
+- A pairing e is defined by taking G_1 as a subgroup of E(GF(p)) of group r, G_2 as a subgroup of E'(GF(p^2)), and G_T as a subgroup of a multiplicative group (GF(p^12))^* of order r.

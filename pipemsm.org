@@ -1,0 +1,9 @@
+#+TITLE: PipeMSM
+
+Reference: [[https://eprint.iacr.org/2022/999.pdf][PipeMSM: Hardware Acceleration for Multi-Scalar Multiplication]]
+
+- MSM -> Multi-scalar multiplication.
+- MSM is a fundamental computational problem.
+- Main bottleneck in ZK-SNARKs.
+- In PipeMSM, they put forth a pipelined design to compute MSM.
+- They claim to have a modular multiplication technique which they deem to be of their independent interest.

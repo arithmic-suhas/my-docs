@@ -1,0 +1,7 @@
+#+TITLE: Elliptic Curve Group Law
+
+Reference: [[https://en.wikipedia.org/wiki/Elliptic_curve#The_group_law][Wikipedia: Elliptic Curve - The group law]]
+
+- The example given in the wiki link suggests that the elliptic curve equation becomes the following since we are working in the projective plane (coordinate geometry).
+
+$\fraq{Y^2}{Z^2} = \fraq{X^3}{Z^3} + a\fraq{X}{Z} + b$
