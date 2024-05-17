@@ -10,11 +10,13 @@ Reference: [[https://zprize.hardcaml.com/msm-overview][Hardcaml MSM implementati
 - They mention that they have utilized the *aws-fpga Vitis flow* for implementation.
   - Will explore if HLS might be a viable route to implement for BN254.
 
+* Design Overview
+
 ** Top-level Pippenger Design
 
 - The main idea of Pippenger's Algorithm is to reformulate the dot products into smaller dot products over windows, where each window represents a small contiguous set of bits from the scalar.
 
-** Overview of the Architecture
+*** Overview of the Architecture
 
 - In the case of BLS12-377, the prime field and scalar field are 377 and 253 bit respectively.
 - In their implementation, they have partitioned the work that the FPGA performs the bucket aggregation and the host performs the final bucket sum.
@@ -26,7 +28,7 @@ Reference: [[https://zprize.hardcaml.com/msm-overview][Hardcaml MSM implementati
   - Bucket sum isn't a very intensive operation from the looks of it, hence the host performing it makes sense. Still curious if there is anything to accelerate.
 - They have discuss some ideas on improving the performance further in the future work section. (TODO tag future work section)
 
-** FPGA Dataflow
+*** FPGA Dataflow
 
 - The high level block diagram showing the dataflow used in Hardcaml's MSM implementation -> [[https://zprize.hardcaml.com/images/msm-block-diagram.png][FPGA Dataflow block diagram]]
 - Points are transformed into a custom representation and pre-loaded into DDR4 memory -> pre-processing data to create a custom structure to store, access and move the data when required to.
@@ -38,7 +40,7 @@ Reference: [[https://zprize.hardcaml.com/msm-overview][Hardcaml MSM implementati
 - They say this approach allows them to focus on implementing a very high performance added on the FPGA (seems like these addition operations are the dominating operation in the Pippenger's algorithm) and then leaving smaller tasks for the host to perform.
   - I will look for their benchmark results and see if they have done any sort of profiling.
 
-** FPGA Bucket Sum
+*** FPGA Bucket Sum
 
 - In their implementation, the majority of the computation is performed by a *fully pipelined point added* with a high but static latency of above 200 cycles.
 - They say, that if a coefficient needs to be naively added to a bucket that is currently in use by the point adder, they need to wait to do so until the addition operation is fully complete before trying again.
@@ -46,7 +48,7 @@ Reference: [[https://zprize.hardcaml.com/msm-overview][Hardcaml MSM implementati
 - They have discussed more about minimizing the impact of the ~200 cycle latency per operation in the page about the Pippenger Controller. (TODO tag the Pippenger Controller page)
 - They seem to be utilizing a trick to reduce the memory usage *by transforming the scalar into signed digit representation for scalars for every bucket*.
 
-** FPGA Point Adder
+*** FPGA Point Adder
 
 - The most expensive part of the pipelined point adder computation is *field multiplications*.
   - Will do literature survey to see if there are any novel methods to mitigate this compute expense with field addition and field multiplications.
@@ -55,3 +57,37 @@ Reference: [[https://zprize.hardcaml.com/msm-overview][Hardcaml MSM implementati
 - To reduce the number of field multiplications, *they convert the points representation* from its original Weistrass curve form into a *Twisted Edwards curve* representation. This reduces the amount of field multiplication substantially.
   - I will look into more about these curve representations.
 - They have gone one step further to reduce the field multiplication operations with some precomputation tricks in the adder implementation. (TODO tag the precomputation tricks page)
+
+** Pippenger Controller
+
+- Key computation of the Pippenger Algorithm is adding each input coefficient to a value stored in RAM (also called a bucket).
+- Naively, if a coefficient needs to be added to a bucket that is currently in use by the point adder, the addition needs to complete before trying again.
+- With table sizes of 4K and their pipeline depth of 200, their implementation expects buckets to be busy in the pipeline around 5% of the time of computation.
+- Waiting 100 cycles per hazard takes a huge hit on the throughput.
+- To mitigate wasting so many cycles on facilitating a hazard forwarding or stalling, they use three simple heuristics to try to keep the pipeline as busy as possible while still avoiding data hazards.
+
+*** Scalar Tracking
+
+- They need to store 200 RAM locations to track data through the pipeline and check if a new coefficient would cause a hazard.
+- Naively done, this would require 200 comparators in parallel and then a wide OR reduction. (not efficient use of area or power)
+- To mitigate this, their controller processes multiple windows on successive clock cycles.
+- In their zprize submission, they have two separate controllers tracking 10 windows each.
+- Since there can be no hazard between windows, they only need to compare and OR reduce 1/10 of the scalars in the pipeline at once.
+
+*** Stalled Point FIFO
+
+- When a hazard is detected, the coefficient and related scalar are placed in stalled point FIFO and we insert a bubble(an empty scalar?) into the pipeline for that cycle.
+- There are separate FIFOs for each window being processed.
+- The FIFOs are only a few elements in size and all combine into a single, wide set of RAMs.
+
+*** Heuristics to handle hazards from the stalled point FIFOs
+
+- They performed some modeling to find an efficient way to handle hazards -> [[https://github.com/fyquah/hardcaml_zprize/blob/master/libs/pippenger/test/model.ml][Modelling]]
+- The heuristics are as follows:
+  1. If all the stalled point FIFOs have atleast one element, process them.
+  2. If any of the stalled point FIFOs are full, process them.
+  3. Otherwise process incoming data.
+
+- By processing full FIFOs first, they seem to avoid overflow.
+- When they all get full and the data hazards are apparent, the FIFOs must be flushed.
+- They found that with 4 elements per FIFO, flushing was extremely rare.
